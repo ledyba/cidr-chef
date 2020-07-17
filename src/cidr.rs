@@ -11,7 +11,7 @@ use std::num::ParseIntError;
 
 #[derive(Debug, PartialEq)]
 pub struct Cidr {
-  mask: u128,
+  address: u128,
   len: usize,
 }
 
@@ -53,7 +53,7 @@ fn parse6(all: &str, repr: &str, acc: u128, pos: usize) -> Result<Cidr, ParseErr
       return Err(ParseError::ParseCidrError(format!("{} is too short.", all)))
     }
     return Ok(Cidr{
-      mask: addr,
+      address: addr,
       len: len.unwrap(),
     });
   }
@@ -65,7 +65,7 @@ fn parse6(all: &str, repr: &str, acc: u128, pos: usize) -> Result<Cidr, ParseErr
     return Err(ParseError::ParseCidrError(format!("{} is too long.", all)))
   }
   Ok(Cidr {
-    mask: (first_addr << (128-first_len)) | second_addr,
+    address: (first_addr << (128-first_len)) | second_addr,
     len: len.unwrap(),
   })
 }
@@ -97,7 +97,7 @@ fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> Result<Cidr, ParseErro
   if next_pos == 0 {
     let len = &repr[sep_pos.unwrap()+1..].parse::<usize>()?;
     Ok(Cidr {
-      mask: next_acc as u128,
+      address: next_acc as u128,
       len: len.clone(),
     })
   } else {
@@ -107,10 +107,10 @@ fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> Result<Cidr, ParseErro
 
 #[test]
 fn parse_ipv4() {
-  assert_eq!(Cidr::new("1.2.3.4/12"), Ok(Cidr{mask: 0x01020304, len: 12}) as ParseResult);
+  assert_eq!(Cidr::new("1.2.3.4/12"), Ok(Cidr{ address: 0x01020304, len: 12}) as ParseResult);
 }
 
 #[test]
 fn parse_ipv6() {
-  assert_eq!(Cidr::new("1::2/61"), Ok(Cidr{mask: 0x0001_0000_0000_0000_0000_0000_0000_0002, len: 61}) as ParseResult);
+  assert_eq!(Cidr::new("1::2/61"), Ok(Cidr{ address: 0x0001_0000_0000_0000_0000_0000_0000_0002, len: 61}) as ParseResult);
 }
