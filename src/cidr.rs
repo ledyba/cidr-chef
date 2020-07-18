@@ -31,16 +31,16 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
 
 
 impl Cidr {
-  pub fn new(repr: &str) -> Result<Cidr, ParseError> {
+  pub fn new(repr: &str) -> ParseResult {
     if repr.contains(".") {
       parse4(repr, repr, 0, 32)
     } else {
-      parse6(repr, repr, 0, 0)
+      parse6(repr, repr)
     }
   }
 }
 
-fn parse6(all: &str, repr: &str, acc: u128, pos: usize) -> Result<Cidr, ParseError> {
+fn parse6(all: &str, repr: &str) -> ParseResult {
   let double_colon_pos = all.find("::");
   let slash_pos = all.find("/");
   if slash_pos.is_none() {
@@ -85,7 +85,7 @@ fn parse6_body(all: &str, repr: &str, acc: u128, size: usize) -> Result<(u128, u
   }
 }
 
-fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> Result<Cidr, ParseError> {
+fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> ParseResult {
   let next_pos = pos - 8;
 
   let sep_pos = repr.find(if next_pos > 0 { "." } else { "/" });

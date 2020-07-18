@@ -6,7 +6,9 @@
  */
 
 extern crate clap;
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg, SubCommand, ArgMatches, AppSettings};
+use std::process::exit;
+
 mod cidr;
 
 fn main() {
@@ -15,41 +17,44 @@ fn main() {
     .author("Kaede Fujisaki <psi@7io.org>")
     .about("Swiss-Army Knife for CIDR calculation")
     .subcommand(SubCommand::with_name("calc")
-      .arg(Arg::with_name("CIDRS")
-      .help("add CIDR set")
-      .allow_hyphen_values(true)
-      .multiple(true)
-    ));
+      .setting(AppSettings::AllowLeadingHyphen)
+      .arg(Arg::with_name("CIDR")
+        .help("add CIDR set")
+        .index(1)
+        .takes_value(true)
+        .multiple(true)
+        .required(true)
+        .allow_hyphen_values(true)
+        .validator(|str| {
+          if str.starts_with("-") || str.starts_with("+") {
+            Ok(())
+          }else {
+            Err("-<addr> or +<addr>".to_string())
+          }
+        })
+      )
+    );
   let m = app.get_matches();
-  let mut cmds = m.values_of("CIDRS").unwrap_or_default();
-  while let cmd = cmds.next() {
-    match cmd {
-      Some("add") => {
-        let set_opt = cmds.next();
-        if set_opt.is_none() {
-          eprint!("No CIDR set to add!");
-          std::process::exit(-1);
-        }
-        let set = set_opt.unwrap();
-        print!("{}", set);
-      }
-      Some("sub") => {
-        let set_opt = cmds.next();
-        if set_opt.is_none() {
-          eprint!("No CIDR set to subtract!");
-          std::process::exit(-1);
-        }
-        let set = set_opt.unwrap();
-        print!("{}", set);
-      }
-      Some(s) => {
-        eprint!("Unknwon command: {}", s);
-        std::process::exit(-1);
-      }
-      None => {
-        break;
-      }
+  match m.subcommand_name() {
+    Some("calc") => {
+      calc(m);
     }
+    Some(x) => {
+      eprint!("Unkown command: {}\n", x);
+      exit(-1);
+    }
+    None => {
+      eprint!("{}\n", m.usage());
+      exit(-1);
+    }
+  }
+
+}
+
+fn calc(m: ArgMatches) {
+  let mut cmds = m.subcommand_matches("calc").unwrap().values_of("CIDR").unwrap_or_default();
+  for cmd in cmds {
+    println!("{}", cmd);
   }
   cidr::Cidr::new("");
 }
