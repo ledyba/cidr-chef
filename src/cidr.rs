@@ -9,7 +9,7 @@ pub mod tree;
 
 use std::num::ParseIntError;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
   IPv4,
   IPv6,
@@ -36,7 +36,6 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
   }
 }
 
-
 impl Cidr {
   pub fn new(repr: &str) -> ParseResult {
     if repr.contains(".") {
@@ -44,6 +43,18 @@ impl Cidr {
     } else {
       parse6(repr, repr)
     }
+  }
+  pub fn to_string(&self) -> String {
+    match self.protocol {
+      Protocol::IPv4 => self.to_string4(),
+      Protocol::IPv6 => self.to_string6()
+    }
+  }
+  fn to_string4(&self) -> String {
+    format!("{}.{}.{}.{}/{}", (self.address >> 24 & 0xff), (self.address >> 16 & 0xff), (self.address >> 8 & 0xff), (self.address >> 0 & 0xff), self.bits)
+  }
+  fn to_string6(&self) -> String {
+    "".to_string()
   }
 }
 
@@ -67,14 +78,30 @@ fn parse6(all: &str, repr: &str) -> ParseResult {
   }
   let first = &repr[..double_colon_pos.unwrap()];
   let second = &repr[double_colon_pos.unwrap()+2..slash_pos.unwrap()];
-  let (first_addr, first_len) = parse6_body(first, first, 0, 0)?;
-  let (second_addr, second_len) = parse6_body(second, second, 0, 0)?;
-  if first_len + second_len > 128 {
+  let (first_addr, first_len) =
+    if first.is_empty() {
+      (0, 0)
+    } else {
+      parse6_body(first, first, 0, 0)?
+    };
+  let (second_addr, second_len) =
+    if second.is_empty() {
+      (0, 0)
+    } else {
+      parse6_body(second, second, 0, 0)?
+    };
+  if first_len + second_len > Protocol::IPv6.len() {
     return Err(ParseError::ParseCidrError(format!("{} is too long.", all)))
   }
+  let address =
+    if first_len == 0 {
+      second_addr
+    } else {
+      (first_addr << (Protocol::IPv6.len() - first_len)) | second_addr
+    };
   Ok(Cidr {
     protocol: Protocol::IPv6,
-    address: (first_addr << (128-first_len)) | second_addr,
+    address,
     bits: len.unwrap(),
   })
 }
@@ -115,6 +142,15 @@ fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> ParseResult {
   }
 }
 
+impl Protocol {
+  pub fn len(&self) -> usize {
+    match self {
+      Protocol::IPv4 => 32,
+      Protocol::IPv6 => 128,
+    }
+  }
+}
+
 #[test]
 fn parse_ipv4() {
   assert_eq!(Cidr::new("1.2.3.4/12"), Ok(Cidr{ protocol: Protocol::IPv4, address: 0x01020304, bits: 12}) as ParseResult);
@@ -123,4 +159,8 @@ fn parse_ipv4() {
 #[test]
 fn parse_ipv6() {
   assert_eq!(Cidr::new("1::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::new("1::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0000, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::new("0::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0000_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::new("::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::new("::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0, bits: 61}) as ParseResult);
 }

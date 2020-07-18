@@ -80,8 +80,14 @@ fn calc(m: ArgMatches) -> Result<(), cidr::ParseError> {
     }
   }
   if !tree4.is_empty() {
+    for cidr in tree4.extract4() {
+      println!("{}", cidr.to_string());
+    }
   }
   if !tree6.is_empty() {
+    for cidr in tree4.extract6() {
+      println!("{}", cidr.to_string());
+    }
   }
   Ok(())
 }
