@@ -8,6 +8,7 @@
 extern crate clap;
 use clap::{App, Arg, SubCommand, ArgMatches, AppSettings};
 use std::process::exit;
+use crate::cidr::Cidr;
 
 mod cidr;
 
@@ -37,7 +38,10 @@ fn main() {
   let m = app.get_matches();
   match m.subcommand_name() {
     Some("calc") => {
-      calc(m);
+      if let Err(err) = calc(m) {
+        eprint!("Failed to calc CIDR: {:?}\n", err);
+        exit(-1);
+      }
     }
     Some(x) => {
       eprint!("Unkown command: {}\n", x);
@@ -51,10 +55,33 @@ fn main() {
 
 }
 
-fn calc(m: ArgMatches) {
-  let mut cmds = m.subcommand_matches("calc").unwrap().values_of("CIDR").unwrap_or_default();
+fn calc(m: ArgMatches) -> Result<(), cidr::ParseError> {
+  let cmds = m.subcommand_matches("calc").unwrap().values_of("CIDR").unwrap_or_default();
+  let mut tree4 = cidr::tree::BitTree::new();
+  let mut tree6 = cidr::tree::BitTree::new();
   for cmd in cmds {
-    println!("{}", cmd);
+    if cmd.starts_with("+") {
+      let cidr = Cidr::new(&cmd[1..])?;
+      match cidr.protocol {
+        cidr::Protocol::IPv4 => tree4.add(&cidr),
+        cidr::Protocol::IPv6 => tree6.add(&cidr)
+      }
+    } else if cmd.starts_with("-") {
+      let cidr = Cidr::new(&cmd[1..])?;
+      let success = match cidr.protocol {
+        cidr::Protocol::IPv4 => tree4.sub(&cidr),
+        cidr::Protocol::IPv6 => tree6.sub(&cidr)
+      };
+      if !success {
+        eprintln!("{} is not contained.", &cmd[1..])
+      }
+    } else {
+      panic!("{} is invalid cmd", cmd);
+    }
   }
-  cidr::Cidr::new("");
+  if !tree4.is_empty() {
+  }
+  if !tree6.is_empty() {
+  }
+  Ok(())
 }

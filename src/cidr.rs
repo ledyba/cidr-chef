@@ -10,9 +10,16 @@ pub mod tree;
 use std::num::ParseIntError;
 
 #[derive(Debug, PartialEq)]
+pub enum Protocol {
+  IPv4,
+  IPv6,
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Cidr {
-  address: u128,
-  len: usize,
+  pub protocol: Protocol,
+  pub address: u128,
+  pub bits: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,8 +60,9 @@ fn parse6(all: &str, repr: &str) -> ParseResult {
       return Err(ParseError::ParseCidrError(format!("{} is too short.", all)))
     }
     return Ok(Cidr{
+      protocol: Protocol::IPv6,
       address: addr,
-      len: len.unwrap(),
+      bits: len.unwrap(),
     });
   }
   let first = &repr[..double_colon_pos.unwrap()];
@@ -65,8 +73,9 @@ fn parse6(all: &str, repr: &str) -> ParseResult {
     return Err(ParseError::ParseCidrError(format!("{} is too long.", all)))
   }
   Ok(Cidr {
+    protocol: Protocol::IPv6,
     address: (first_addr << (128-first_len)) | second_addr,
-    len: len.unwrap(),
+    bits: len.unwrap(),
   })
 }
 fn parse6_body(all: &str, repr: &str, acc: u128, size: usize) -> Result<(u128, usize), ParseError> {
@@ -97,8 +106,9 @@ fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> ParseResult {
   if next_pos == 0 {
     let len = &repr[sep_pos.unwrap()+1..].parse::<usize>()?;
     Ok(Cidr {
+      protocol: Protocol::IPv4,
       address: next_acc as u128,
-      len: len.clone(),
+      bits: len.clone(),
     })
   } else {
     parse4(all, &repr[sep_pos.unwrap() + 1..], next_acc, next_pos)
@@ -107,10 +117,10 @@ fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> ParseResult {
 
 #[test]
 fn parse_ipv4() {
-  assert_eq!(Cidr::new("1.2.3.4/12"), Ok(Cidr{ address: 0x01020304, len: 12}) as ParseResult);
+  assert_eq!(Cidr::new("1.2.3.4/12"), Ok(Cidr{ protocol: Protocol::IPv4, address: 0x01020304, bits: 12}) as ParseResult);
 }
 
 #[test]
 fn parse_ipv6() {
-  assert_eq!(Cidr::new("1::2/61"), Ok(Cidr{ address: 0x0001_0000_0000_0000_0000_0000_0000_0002, len: 61}) as ParseResult);
+  assert_eq!(Cidr::new("1::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
 }
