@@ -18,7 +18,7 @@ struct Node {
 }
 
 impl Node {
-  pub fn is_end(&self) -> bool {
+  pub fn is_leaf(&self) -> bool {
     self.branches.iter().all(Option::is_none)
   }
 }
@@ -59,7 +59,7 @@ impl IpTree {
 }
 
 fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
-  if curr.is_some() && curr.as_ref().unwrap().is_end() {
+  if curr.is_some() && curr.as_ref().unwrap().is_leaf() {
     return;
   }
   if bits == 0 {
@@ -73,7 +73,7 @@ fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
   let next: &mut Option<Box<Node>> = &mut curr.as_mut().unwrap().branches[b];
   add_mask(next, mask << 1, bits - 1);
   if let Some(tree) = curr {
-    if tree.branches.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_end()) {
+    if tree.branches.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_leaf()) {
       *curr = Some(Box::default());
     }
   }
@@ -89,12 +89,12 @@ fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
   }
   let curr = curr_opt.as_mut().unwrap();
   let b = (mask >> 127 & 1) as usize;
-  if curr.is_end() {
+  if curr.is_leaf() {
     curr.branches[0] = Some(Box::default());
     curr.branches[1] = Some(Box::default());
   }
   sub_mask(&mut curr.branches[b], mask << 1, bits - 1);
-  if curr.is_end() {
+  if curr.is_leaf() {
     *curr_opt = None;
   }
   true
