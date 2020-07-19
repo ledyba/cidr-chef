@@ -9,15 +9,15 @@ use crate::cidr::{Cidr, Protocol};
 
 #[derive(Default, Debug)]
 pub struct IpTree {
-  root: Option<Box<Tree>>
+  root: Option<Box<Node>>
 }
 
 #[derive(Default, Debug)]
-struct Tree {
-  children: [Option<Box<Tree>>; 2]
+struct Node {
+  children: [Option<Box<Node>>; 2]
 }
 
-impl Tree {
+impl Node {
   pub fn is_end(&self) -> bool {
     self.children.iter().all(Option::is_none)
   }
@@ -58,7 +58,7 @@ impl IpTree {
   }
 }
 
-fn add_mask(curr: &mut Option<Box<Tree>>, mask: u128, bits: usize) {
+fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
   if curr.is_some() && curr.as_ref().unwrap().is_end() {
     return;
   }
@@ -70,7 +70,7 @@ fn add_mask(curr: &mut Option<Box<Tree>>, mask: u128, bits: usize) {
   if curr.is_none() {
     *curr = Some(Box::default());
   }
-  let next: &mut Option<Box<Tree>> = &mut curr.as_mut().unwrap().children[b];
+  let next: &mut Option<Box<Node>> = &mut curr.as_mut().unwrap().children[b];
   add_mask(next, mask << 1, bits - 1);
   if let Some(tree) = curr {
     if tree.children.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_end()) {
@@ -79,7 +79,7 @@ fn add_mask(curr: &mut Option<Box<Tree>>, mask: u128, bits: usize) {
   }
 }
 
-fn sub_mask(curr_opt: &mut Option<Box<Tree>>,mask: u128, bits: usize) -> bool {
+fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
   if bits == 0 {
     *curr_opt = None;
     return true;
@@ -100,7 +100,7 @@ fn sub_mask(curr_opt: &mut Option<Box<Tree>>,mask: u128, bits: usize) -> bool {
   true
 }
 
-fn extract(protocol: Protocol, curr: &Option<Box<Tree>>, acc: u128, depth: usize, vec: &mut Vec<Cidr>) {
+fn extract(protocol: Protocol, curr: &Option<Box<Node>>, acc: u128, depth: usize, vec: &mut Vec<Cidr>) {
   match curr {
     Some(curr) => {
       if curr.children.iter().all(Option::is_none) {
