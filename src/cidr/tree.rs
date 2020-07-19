@@ -14,12 +14,12 @@ pub struct IpTree {
 
 #[derive(Default, Debug)]
 struct Node {
-  children: [Option<Box<Node>>; 2]
+  branches: [Option<Box<Node>>; 2]
 }
 
 impl Node {
   pub fn is_end(&self) -> bool {
-    self.children.iter().all(Option::is_none)
+    self.branches.iter().all(Option::is_none)
   }
 }
 
@@ -70,10 +70,10 @@ fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
   if curr.is_none() {
     *curr = Some(Box::default());
   }
-  let next: &mut Option<Box<Node>> = &mut curr.as_mut().unwrap().children[b];
+  let next: &mut Option<Box<Node>> = &mut curr.as_mut().unwrap().branches[b];
   add_mask(next, mask << 1, bits - 1);
   if let Some(tree) = curr {
-    if tree.children.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_end()) {
+    if tree.branches.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_end()) {
       *curr = Some(Box::default());
     }
   }
@@ -90,10 +90,10 @@ fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
   let curr = curr_opt.as_mut().unwrap();
   let b = (mask >> 127 & 1) as usize;
   if curr.is_end() {
-    curr.children[0] = Some(Box::default());
-    curr.children[1] = Some(Box::default());
+    curr.branches[0] = Some(Box::default());
+    curr.branches[1] = Some(Box::default());
   }
-  sub_mask(&mut curr.children[b], mask << 1, bits - 1);
+  sub_mask(&mut curr.branches[b], mask << 1, bits - 1);
   if curr.is_end() {
     *curr_opt = None;
   }
@@ -103,14 +103,14 @@ fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
 fn extract(protocol: Protocol, curr: &Option<Box<Node>>, acc: u128, depth: usize, vec: &mut Vec<Cidr>) {
   match curr {
     Some(curr) => {
-      if curr.children.iter().all(Option::is_none) {
+      if curr.branches.iter().all(Option::is_none) {
         vec.push(Cidr{
           protocol,
           address: acc << (protocol.len() - depth),
           bits: depth,
         });
       }
-      for (i, child) in curr.children.iter().enumerate() {
+      for (i, child) in curr.branches.iter().enumerate() {
         extract(protocol, child, (acc << 1) | i as u128, depth + 1, vec);
       }
     }
