@@ -57,8 +57,8 @@ fn main() {
 
 fn calc(m: ArgMatches) -> Result<(), cidr::ParseError> {
   let cmds = m.subcommand_matches("calc").unwrap().values_of("CIDR").unwrap_or_default();
-  let mut tree4 = cidr::tree::BitTree::new();
-  let mut tree6 = cidr::tree::BitTree::new();
+  let mut tree4 = cidr::tree::IpTree::new();
+  let mut tree6 = cidr::tree::IpTree::new();
   for cmd in cmds {
     if cmd.starts_with("+") {
       let cidr = Cidr::new(&cmd[1..])?;

@@ -1,5 +1,6 @@
 /* coding: utf-8 */
 use crate::cidr::{Cidr, Protocol};
+use std::borrow::Borrow;
 
 /**
  * cidr-chef
@@ -8,7 +9,7 @@ use crate::cidr::{Cidr, Protocol};
  */
 
 #[derive(Default, Debug)]
-pub struct BitTree {
+pub struct IpTree {
   root: Option<Box<Tree>>
 }
 
@@ -23,10 +24,10 @@ impl Tree {
   }
 }
 
-impl BitTree {
+impl IpTree {
   // create empty tree.
-  pub fn new() -> BitTree {
-    return BitTree {
+  pub fn new() -> IpTree {
+    return IpTree {
       root: None,
     }
   }
@@ -58,29 +59,24 @@ impl BitTree {
   }
 }
 
-fn add_mask(curr: &mut Option<Box<Tree>>, mask: u128, bits: usize) -> bool {
+fn add_mask(curr: &mut Option<Box<Tree>>, mask: u128, bits: usize) {
   if curr.is_some() && curr.as_ref().unwrap().is_end() {
-    return true;
+    return;
   }
   if bits == 0 {
     *curr = Some(Box::default());
-    return true;
+    return;
   }
   let b = (mask >> 127 & 1) as usize;
   if curr.is_none() {
     *curr = Some(Box::default());
   }
   let next: &mut Option<Box<Tree>> = &mut curr.as_mut().unwrap().children[b];
-  if add_mask(next, mask << 1, bits - 1) {
-    let other = &curr.as_ref().unwrap().children[(b+1)%2];
-    if other.is_some() && other.as_ref().unwrap().is_end() {
+  add_mask(next, mask << 1, bits - 1);
+  if let Some(tree) = curr {
+    if tree.children.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_end()) {
       *curr = Some(Box::default());
-      true
-    } else {
-      false
     }
-  } else {
-    false
   }
 }
 
@@ -92,16 +88,15 @@ fn sub_mask(curr_opt: &mut Option<Box<Tree>>,mask: u128, bits: usize) -> bool {
   if curr_opt.is_none() {
     return false;
   }
-  let b = (mask >> 127 & 1) as usize;
   let curr = curr_opt.as_mut().unwrap();
-  if curr.children.iter().any(Option::is_some) {
-    sub_mask(&mut curr.children[b], mask << 1, bits - 1);
-    if curr.children.iter().all(Option::is_none) {
-      *curr_opt = None;
-    }
-  } else {
-    curr.children[(b+1)%2] = Some(Box::default());
-    curr.children[b] = None;
+  let b = (mask >> 127 & 1) as usize;
+  if curr.is_end() {
+    curr.children[0] = Some(Box::default());
+    curr.children[1] = Some(Box::default());
+  }
+  sub_mask(&mut curr.children[b], mask << 1, bits - 1);
+  if curr.is_end() {
+    *curr_opt = None;
   }
   true
 }
@@ -121,5 +116,24 @@ fn extract(protocol: Protocol, curr: &Option<Box<Tree>>, acc: u128, depth: usize
       }
     }
     None => {}
+  }
+}
+
+#[test]
+fn test_simple() {
+  {
+    let mut t = IpTree::new();
+    t.add(Cidr::new("192.168.0.0/24").unwrap().borrow());
+    assert!(t.sub(Cidr::new("192.168.0.0/24").unwrap().borrow()));
+    assert!(t.is_empty());
+  }
+  {
+    let mut t = IpTree::new();
+    t.add(Cidr::new("0.0.0.0/0").unwrap().borrow());
+    assert!(t.sub(Cidr::new("192.168.0.0/24").unwrap().borrow()));
+    t.add(Cidr::new("192.168.0.0/24").unwrap().borrow());
+    let lst = t.extract4();
+    assert_eq!(lst.len(), 1);
+    assert_eq!(lst[0].to_string(), "0.0.0.0/0");
   }
 }
