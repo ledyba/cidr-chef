@@ -37,11 +37,11 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
 }
 
 impl Cidr {
-  pub fn new(repr: &str) -> ParseResult {
-    if repr.contains(".") {
-      parse4(repr, repr, 0, 32)
+  pub fn parse(addr: &str) -> ParseResult {
+    if addr.contains(".") {
+      parse4(addr, addr, 0, 32)
     } else {
-      parse6(repr, repr)
+      parse6(addr, addr)
     }
   }
   pub fn to_string(&self) -> String {
@@ -153,14 +153,14 @@ impl Protocol {
 
 #[test]
 fn parse_ipv4() {
-  assert_eq!(Cidr::new("1.2.3.4/12"), Ok(Cidr{ protocol: Protocol::IPv4, address: 0x01020304, bits: 12}) as ParseResult);
+  assert_eq!(Cidr::parse("1.2.3.4/12"), Ok(Cidr{ protocol: Protocol::IPv4, address: 0x01020304, bits: 12}) as ParseResult);
 }
 
 #[test]
 fn parse_ipv6() {
-  assert_eq!(Cidr::new("1::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
-  assert_eq!(Cidr::new("1::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0000, bits: 61}) as ParseResult);
-  assert_eq!(Cidr::new("0::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0000_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
-  assert_eq!(Cidr::new("::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0, bits: 61}) as ParseResult);
-  assert_eq!(Cidr::new("::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::parse("1::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::parse("1::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0001_0000_0000_0000_0000_0000_0000_0000, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::parse("0::2/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0000_0000_0000_0000_0000_0000_0000_0002, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::parse("::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0, bits: 61}) as ParseResult);
+  assert_eq!(Cidr::parse("::/61"), Ok(Cidr{ protocol: Protocol::IPv6, address: 0x0, bits: 61}) as ParseResult);
 }

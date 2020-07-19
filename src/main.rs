@@ -61,13 +61,13 @@ fn calc(m: ArgMatches) -> Result<(), cidr::ParseError> {
   let mut tree6 = cidr::tree::IpTree::new();
   for cmd in cmds {
     if cmd.starts_with("+") {
-      let cidr = Cidr::new(&cmd[1..])?;
+      let cidr = Cidr::parse(&cmd[1..])?;
       match cidr.protocol {
         cidr::Protocol::IPv4 => tree4.add(&cidr),
         cidr::Protocol::IPv6 => tree6.add(&cidr)
       }
     } else if cmd.starts_with("-") {
-      let cidr = Cidr::new(&cmd[1..])?;
+      let cidr = Cidr::parse(&cmd[1..])?;
       let success = match cidr.protocol {
         cidr::Protocol::IPv4 => tree4.sub(&cidr),
         cidr::Protocol::IPv6 => tree6.sub(&cidr)

@@ -122,15 +122,15 @@ fn extract(protocol: Protocol, curr: &Option<Box<Node>>, acc: u128, depth: usize
 fn test_simple() {
   {
     let mut t = IpTree::new();
-    t.add(&Cidr::new("192.168.0.0/24").unwrap());
-    assert!(t.sub(&Cidr::new("192.168.0.0/24").unwrap()));
+    t.add(&Cidr::parse("192.168.0.0/24").unwrap());
+    assert!(t.sub(&Cidr::parse("192.168.0.0/24").unwrap()));
     assert!(t.is_empty());
   }
   {
     let mut t = IpTree::new();
-    t.add(&Cidr::new("0.0.0.0/0").unwrap());
-    assert!(t.sub(&Cidr::new("192.168.0.0/24").unwrap()));
-    t.add(&Cidr::new("192.168.0.0/24").unwrap());
+    t.add(&Cidr::parse("0.0.0.0/0").unwrap());
+    assert!(t.sub(&Cidr::parse("192.168.0.0/24").unwrap()));
+    t.add(&Cidr::parse("192.168.0.0/24").unwrap());
     let lst = t.extract4();
     assert_eq!(lst.len(), 1);
     assert_eq!(lst[0].to_string(), "0.0.0.0/0");
