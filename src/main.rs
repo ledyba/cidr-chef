@@ -6,11 +6,11 @@
  */
 
 extern crate clap;
-use clap::{App, Arg, SubCommand, ArgMatches, AppSettings};
+use clap::{App, Arg, SubCommand, AppSettings};
 use std::process::exit;
-use crate::cidr::Cidr;
 
 mod cidr;
+mod cmds;
 
 fn main() {
   let app = App::new("cidr-chef")
@@ -19,12 +19,18 @@ fn main() {
     .about("Swiss-Army Knife for CIDR calculation")
     .subcommand(SubCommand::with_name("calc")
       .setting(AppSettings::AllowLeadingHyphen)
+      .arg(Arg::with_name("file")
+        .long("from-file")
+        .short("f")
+        .allow_hyphen_values(true)
+        .value_name("FILE or -(stdin)")
+        .required(false))
       .arg(Arg::with_name("CIDR")
-        .help("add CIDR set")
+        .help("CIDR set to add or subtract. ex) +0.0.0.0/0 -10.0.0.0/8")
         .index(1)
         .takes_value(true)
         .multiple(true)
-        .required(true)
+        .required(false)
         .allow_hyphen_values(true)
         .validator(|str| {
           if str.starts_with("-") || str.starts_with("+") {
@@ -32,13 +38,12 @@ fn main() {
           }else {
             Err("-<addr> or +<addr>".to_string())
           }
-        })
-      )
+        }))
     );
   let m = app.get_matches();
   match m.subcommand_name() {
     Some("calc") => {
-      if let Err(err) = calc(m) {
+      if let Err(err) = cmds::calc::handle(m) {
         eprint!("Failed to calc CIDR: {:?}\n", err);
         exit(-1);
       }
@@ -55,39 +60,4 @@ fn main() {
 
 }
 
-fn calc(m: ArgMatches) -> Result<(), cidr::ParseError> {
-  let cmds = m.subcommand_matches("calc").unwrap().values_of("CIDR").unwrap_or_default();
-  let mut tree4 = cidr::tree::IpTree::new();
-  let mut tree6 = cidr::tree::IpTree::new();
-  for cmd in cmds {
-    if cmd.starts_with("+") {
-      let cidr = Cidr::parse(&cmd[1..])?;
-      match cidr.protocol {
-        cidr::Protocol::IPv4 => tree4.add(&cidr),
-        cidr::Protocol::IPv6 => tree6.add(&cidr)
-      }
-    } else if cmd.starts_with("-") {
-      let cidr = Cidr::parse(&cmd[1..])?;
-      let success = match cidr.protocol {
-        cidr::Protocol::IPv4 => tree4.sub(&cidr),
-        cidr::Protocol::IPv6 => tree6.sub(&cidr)
-      };
-      if !success {
-        eprintln!("{} is not contained.", &cmd[1..])
-      }
-    } else {
-      panic!("{} is invalid cmd", cmd);
-    }
-  }
-  if !tree4.is_empty() {
-    for cidr in tree4.extract4() {
-      println!("{}", cidr.to_string());
-    }
-  }
-  if !tree6.is_empty() {
-    for cidr in tree4.extract6() {
-      println!("{}", cidr.to_string());
-    }
-  }
-  Ok(())
-}
+

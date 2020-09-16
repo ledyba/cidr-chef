@@ -28,6 +28,14 @@ pub enum ParseError {
   ParseCidrError(String),
 }
 
+impl std::fmt::Display for ParseError {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+
+impl std::error::Error for ParseError {}
+
 pub type ParseResult = std::result::Result<Cidr, ParseError>;
 
 impl std::convert::From<std::num::ParseIntError> for ParseError {
@@ -44,17 +52,20 @@ impl Cidr {
       parse6(addr, addr)
     }
   }
-  pub fn to_string(&self) -> String {
-    match self.protocol {
-      Protocol::IPv4 => self.to_string4(),
-      Protocol::IPv6 => self.to_string6()
-    }
-  }
   fn to_string4(&self) -> String {
     format!("{}.{}.{}.{}/{}", (self.address >> 24 & 0xff), (self.address >> 16 & 0xff), (self.address >> 8 & 0xff), (self.address >> 0 & 0xff), self.bits)
   }
   fn to_string6(&self) -> String {
     "".to_string()
+  }
+}
+
+impl ToString for Cidr {
+  fn to_string(&self) -> String {
+    match self.protocol {
+      Protocol::IPv4 => self.to_string4(),
+      Protocol::IPv6 => self.to_string6()
+    }
   }
 }
 
@@ -105,6 +116,7 @@ fn parse6(all: &str, repr: &str) -> ParseResult {
     bits: len.unwrap(),
   })
 }
+
 fn parse6_body(all: &str, repr: &str, acc: u128, size: usize) -> Result<(u128, usize), ParseError> {
   let sep_pos = repr.find(":");
   match sep_pos{

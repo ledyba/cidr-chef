@@ -1,11 +1,10 @@
 /* coding: utf-8 */
-use crate::cidr::{Cidr, Protocol};
-
-/**
+/******************************************************************************
  * cidr-chef
  *
  * Copyright 2020-, Kaede Fujisaki
- */
+ *****************************************************************************/
+use crate::cidr::{Cidr, Protocol};
 
 #[derive(Default, Debug)]
 pub struct IpTree {
