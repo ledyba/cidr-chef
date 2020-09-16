@@ -30,7 +30,14 @@ pub enum ParseError {
 
 impl std::fmt::Display for ParseError {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{:?}", self)
+    match self {
+      ParseError::ParseIntError(err) => {
+        write!(f, "CidrParseError(Failed to parse Int): {:?}", err)
+      },
+      ParseError::ParseCidrError(err) => {
+        write!(f, "CidrParseError: {:?}", err)
+      },
+    }
   }
 }
 
