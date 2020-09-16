@@ -1,4 +1,4 @@
-# CIDR chef
+# CIDR Chef
 
  - [![Build on Linux](https://github.com/ledyba/cidr-chef/workflows/Build%20on%20Linux/badge.svg)](https://github.com/ledyba/cidr-chef/actions?query=workflow%3A%22Build+on+Linux%22)
    - [![Build single binary on Linux](https://github.com/ledyba/cidr-chef/workflows/Build%20single%20binary%20on%20Linux/badge.svg)](https://github.com/ledyba/cidr-chef/actions?query=workflow%3A%22Build+single+binary+on+Linux%22)
