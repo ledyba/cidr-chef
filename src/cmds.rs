@@ -5,4 +5,4 @@
  * Copyright 2020-, Kaede Fujisaki
  *****************************************************************************/
 
-pub(crate) mod calc;
+pub mod calc;
