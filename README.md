@@ -1,5 +1,11 @@
 # CIDR chef
 
+ - [![Build on Linux](https://github.com/ledyba/cidr-chef/workflows/Build%20on%20Linux/badge.svg)](https://github.com/ledyba/cidr-chef/actions?query=workflow%3A%22Build+on+Linux%22)
+   - [![Build single binary on Linux](https://github.com/ledyba/cidr-chef/workflows/Build%20single%20binary%20on%20Linux/badge.svg)](https://github.com/ledyba/cidr-chef/actions?query=workflow%3A%22Build+single+binary+on+Linux%22)
+ - [![Build on macOS](https://github.com/ledyba/cidr-chef/workflows/Build%20on%20macOS/badge.svg)](https://github.com/ledyba/cidr-chef/actions?query=workflow%3A%22Build+on+macOS%22)
+ - [![Build on Windows](https://github.com/ledyba/cidr-chef/workflows/Build%20on%20Windows/badge.svg)](https://github.com/ledyba/cidr-chef/actions?query=workflow%3A%22Build+on+Windows%22)
+
+
 CIDR chef is a swiss-army knife to cook [CIDRs](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) and IP addresses (Or at least it's supposed to be!).
 
 cidr-chef both supports IPv4/v6.
