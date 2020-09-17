@@ -80,23 +80,26 @@ fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
 
 fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
   if bits == 0 {
+    let result = curr_opt.as_ref().map_or_else(|| false, |it| it.is_leaf());
     *curr_opt = None;
-    return true;
+    return result;
   }
   if curr_opt.is_none() {
     return false;
   }
   let curr = curr_opt.as_mut().unwrap();
   let b = (mask >> 127 & 1) as usize;
+  let mut split = false;
   if curr.is_leaf() {
     curr.branches[0] = Some(Box::default());
     curr.branches[1] = Some(Box::default());
+    split = true;
   }
-  sub_mask(&mut curr.branches[b], mask << 1, bits - 1);
+  let result = sub_mask(&mut curr.branches[b], mask << 1, bits - 1);
   if curr.is_leaf() {
     *curr_opt = None;
   }
-  true
+  split || result
 }
 
 fn extract(protocol: Protocol, curr: &Option<Box<Node>>, acc: u128, depth: usize, vec: &mut Vec<Cidr>) {

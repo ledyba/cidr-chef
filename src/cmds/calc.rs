@@ -33,7 +33,7 @@ where
           cidr::Protocol::IPv6 => tree6.sub(&cidr),
         };
         if !success {
-          eprintln!("{} is not contained.", &cmd[1..])
+          eprintln!("{} is not fully contained in current set.", &cmd[1..])
         }
       }
       cmd => {
