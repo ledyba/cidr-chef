@@ -1,0 +1,28 @@
+---
+version: '3.7'
+
+services:
+  cidr-chef:
+    container_name: cidr-chef
+    hostname: cidr-chef
+    image: cidr-chef
+    build:
+      context: ./
+    restart: always
+    entrypoint: '/bin/sh'
+    command:
+      - '-c'
+      - 'while true; do sleep 1; done'
+    environment:
+      - 'RUST_BACKTRACE=1'
+    networks:
+      - planet-link
+    logging:
+      driver: "json-file"
+      options:
+        max-file: '4'
+        max-size: '250m'
+networks:
+  planet-link:
+    external:
+      name: planet-link
