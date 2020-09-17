@@ -15,14 +15,9 @@ services:
       - 'while true; do sleep 1; done'
     environment:
       - 'RUST_BACKTRACE=1'
-    networks:
-      - planet-link
+    networks: []
     logging:
       driver: "json-file"
       options:
         max-file: '4'
         max-size: '250m'
-networks:
-  planet-link:
-    external:
-      name: planet-link
