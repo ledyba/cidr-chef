@@ -7,24 +7,34 @@
 use crate::cidr::{Cidr, Protocol};
 
 #[derive(Default, Debug)]
-pub struct IpTree {
-  root: Option<Box<Node>>
+pub struct IpTree<V> {
+  root: Option<Box<Node<V>>>
 }
 
-#[derive(Default, Debug)]
-struct Node {
-  branches: [Option<Box<Node>>; 2]
+#[derive(Debug)]
+struct Node<V> where {
+  value: Option<V>,
+  branches: [Option<Box<Node<V>>>; 2]
 }
 
-impl Node {
+impl<V> Default for Node<V> {
+  fn default() -> Self {
+    Node {
+      value: None,
+      branches: [None, None],
+    }
+  }
+}
+
+impl<V> Node<V> {
   pub fn is_leaf(&self) -> bool {
     self.branches.iter().all(Option::is_none)
   }
 }
 
-impl IpTree {
+impl<V> IpTree<V> {
   // create empty tree.
-  pub fn new() -> IpTree {
+  pub fn new() -> IpTree<V> {
     return IpTree {
       root: None,
     }
@@ -57,7 +67,7 @@ impl IpTree {
   }
 }
 
-fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
+fn add_mask<V>(curr: &mut Option<Box<Node<V>>>, mask: u128, bits: usize) {
   if curr.is_some() && curr.as_ref().unwrap().is_leaf() {
     return;
   }
@@ -69,7 +79,7 @@ fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
   if curr.is_none() {
     *curr = Some(Box::default());
   }
-  let next: &mut Option<Box<Node>> = &mut curr.as_mut().unwrap().branches[b];
+  let next: &mut Option<Box<Node<V>>> = &mut curr.as_mut().unwrap().branches[b];
   add_mask(next, mask << 1, bits - 1);
   if let Some(tree) = curr {
     if tree.branches.iter().all(|child| child.is_some() && child.as_ref().unwrap().is_leaf()) {
@@ -78,7 +88,7 @@ fn add_mask(curr: &mut Option<Box<Node>>, mask: u128, bits: usize) {
   }
 }
 
-fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
+fn sub_mask<V>(curr_opt: &mut Option<Box<Node<V>>>, mask: u128, bits: usize) -> bool {
   if bits == 0 {
     let result = curr_opt.as_ref().map_or_else(|| false, |it| it.is_leaf());
     *curr_opt = None;
@@ -102,7 +112,7 @@ fn sub_mask(curr_opt: &mut Option<Box<Node>>, mask: u128, bits: usize) -> bool {
   split || result
 }
 
-fn extract(protocol: Protocol, curr: &Option<Box<Node>>, acc: u128, depth: usize, vec: &mut Vec<Cidr>) {
+fn extract<V>(protocol: Protocol, curr: &Option<Box<Node<V>>>, acc: u128, depth: usize, vec: &mut Vec<Cidr>) {
   match curr {
     Some(curr) => {
       if curr.branches.iter().all(Option::is_none) {
@@ -123,13 +133,13 @@ fn extract(protocol: Protocol, curr: &Option<Box<Node>>, acc: u128, depth: usize
 #[test]
 fn test_simple() {
   {
-    let mut t = IpTree::new();
+    let mut t = IpTree::<()>::new();
     t.add(&Cidr::parse("192.168.0.0/24").unwrap());
     assert!(t.sub(&Cidr::parse("192.168.0.0/24").unwrap()));
     assert!(t.is_empty());
   }
   {
-    let mut t = IpTree::new();
+    let mut t = IpTree::<()>::new();
     t.add(&Cidr::parse("0.0.0.0/0").unwrap());
     assert!(t.sub(&Cidr::parse("192.168.0.0/24").unwrap()));
     t.add(&Cidr::parse("192.168.0.0/24").unwrap());

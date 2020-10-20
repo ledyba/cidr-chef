@@ -11,7 +11,7 @@ use crate::cidr::Cidr;
 use crate::cidr::tree::IpTree;
 use std::io::BufRead;
 
-fn handle_commands<'a, 'b, I, S>(tree4: &'a mut IpTree, tree6: &'a mut IpTree, cmds: I) -> Result<(), cidr::ParseError>
+fn handle_commands<'a, 'b, I, S, V>(tree4: &'a mut IpTree<V>, tree6: &'a mut IpTree<V>, cmds: I) -> Result<(), cidr::ParseError>
 where
   I: Iterator<Item=S>,
   S: AsRef<str>
@@ -52,9 +52,9 @@ where
   Ok(())
 }
 
-pub fn handle(m: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-  let mut tree4 = cidr::tree::IpTree::new();
-  let mut tree6 = cidr::tree::IpTree::new();
+pub fn handle(m: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+  let mut tree4 = cidr::tree::IpTree::<()>::new();
+  let mut tree6 = cidr::tree::IpTree::<()>::new();
 
   let m = m.subcommand_matches("calc").unwrap();
   if m.value_of("file").is_some() { // Handle file first
