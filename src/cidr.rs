@@ -8,6 +8,7 @@
 pub mod tree;
 
 use std::num::ParseIntError;
+use clap::Format::Error;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
@@ -24,19 +25,23 @@ pub struct Cidr {
 
 #[derive(Debug, PartialEq)]
 pub enum ParseError {
-  ParseIntError(ParseIntError),
-  ParseCidrError(String),
+  FailedToParseInt(ParseIntError),
+  FailedToParseCidr(String),
+  FailedToDetectIpVersion,
 }
 
 impl std::fmt::Display for ParseError {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
-      ParseError::ParseIntError(err) => {
-        write!(f, "CidrParseError(Failed to parse Int): {:?}", err)
-      },
-      ParseError::ParseCidrError(err) => {
-        write!(f, "CidrParseError: {:?}", err)
-      },
+      ParseError::FailedToParseInt(err) => {
+        write!(f, "Failed to parse as an integer: {:?}", err)
+      }
+      ParseError::FailedToParseCidr(err) => {
+        write!(f, "Failed to parse as a CIDR representation: {:?}", err)
+      }
+      ParseError::FailedToDetectIpVersion => {
+        f.write_str("Failed to detect ip version")
+      }
     }
   }
 }
@@ -47,7 +52,7 @@ pub type ParseResult = std::result::Result<Cidr, ParseError>;
 
 impl std::convert::From<std::num::ParseIntError> for ParseError {
   fn from(err: ParseIntError) -> Self {
-    ParseError::ParseIntError(err)
+    ParseError::FailedToParseInt(err)
   }
 }
 
@@ -55,8 +60,10 @@ impl Cidr {
   pub fn parse(addr: &str) -> ParseResult {
     if addr.contains(".") {
       parse4(addr, addr, 0, 32)
-    } else {
+    } else if addr.contains(":") {
       parse6(addr, addr)
+    } else {
+      Error(ParseError::CannotDetectAddrVersionError)
     }
   }
   fn to_string4(&self) -> String {
@@ -80,13 +87,13 @@ fn parse6(all: &str, repr: &str) -> ParseResult {
   let double_colon_pos = all.find("::");
   let slash_pos = all.find("/");
   if slash_pos.is_none() {
-    return Err(ParseError::ParseCidrError(format!("{} does not contain valid network address", all)))
+    return Err(ParseError::FailedToParseCidr(format!("{} does not contain valid network address", all)))
   }
   let len = all[slash_pos.unwrap()+1..].parse::<usize>();
   if double_colon_pos.is_none() {
     let (addr, addr_len) = parse6_body(all, &repr[..slash_pos.unwrap()], 0, 0)?;
     if addr_len != 128 {
-      return Err(ParseError::ParseCidrError(format!("{} is too short.", all)))
+      return Err(ParseError::FailedToParseCidr(format!("{} is too short.", all)))
     }
     return Ok(Cidr{
       protocol: Protocol::IPv6,
@@ -109,7 +116,7 @@ fn parse6(all: &str, repr: &str) -> ParseResult {
       parse6_body(second, second, 0, 0)?
     };
   if first_len + second_len > Protocol::IPv6.len() {
-    return Err(ParseError::ParseCidrError(format!("{} is too long.", all)))
+    return Err(ParseError::FailedToParseCidr(format!("{} is too long.", all)))
   }
   let address =
     if first_len == 0 {
@@ -145,7 +152,7 @@ fn parse4(all: &str, repr: &str, acc: u32, pos: usize) -> ParseResult {
 
   let sep_pos = repr.find(if next_pos > 0 { "." } else { "/" });
   if sep_pos.is_none() {
-    return Err(ParseError::ParseCidrError(format!("{} does not contain valid network address", all)))
+    return Err(ParseError::FailedToParseCidr(format!("{} does not contain valid network address", all)))
   }
   let byte = &repr[0..sep_pos.unwrap()].parse::<u32>()?;
   let next_acc = acc | (byte << next_pos);
