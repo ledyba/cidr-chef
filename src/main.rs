@@ -6,31 +6,31 @@
  */
 
 extern crate clap;
-use clap::{App, Arg, SubCommand, AppSettings};
+use clap::{App, Arg, AppSettings};
 use std::process::exit;
 
 mod cidr;
 mod cmds;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
   let app = App::new("cidr-chef")
     .version("0.1.0")
     .author("Kaede Fujisaki <psi@7io.org>")
     .about("Swiss-Army Knife for CIDR calculation")
-    .subcommand(SubCommand::with_name("calc")
-      .setting(AppSettings::AllowLeadingHyphen)
-      .arg(Arg::with_name("file")
+    .setting(AppSettings::SubcommandRequiredElseHelp)
+    .subcommand(App::new("calc")
+      .arg(Arg::new("file")
         .help("CIDR set to add or subtract. ex) +0.0.0.0/0 -10.0.0.0/8")
         .long("from-file")
-        .short("f")
+        .short('f')
         .allow_hyphen_values(true)
         .value_name("FILE or -(stdin)")
         .required(false))
-      .arg(Arg::with_name("CIDR")
+      .arg(Arg::new("CIDR")
         .help("CIDR set to add or subtract. ex) +0.0.0.0/0 -10.0.0.0/8")
         .index(1)
         .takes_value(true)
-        .multiple(true)
+        .multiple_values(true)
         .required(false)
         .allow_hyphen_values(true)
         .validator(|str| {
@@ -40,26 +40,26 @@ fn main() {
             Err("-<addr> or +<addr>".to_string())
           }
         })))
-      .subcommand(SubCommand::with_name("info")
-        .arg(Arg::with_name("file")
+      .subcommand(App::new("info")
+        .arg(Arg::new("file")
           .help("IP addrs to get info")
           .long("from-file")
-          .short("f")
-          .multiple(true)
+          .short('f')
+          .multiple_occurrences(true)
           .value_name("FILE or -(stdin)")
           .required(false))
-        .arg(Arg::with_name("reports")
+        .arg(Arg::new("reports")
           .help("ALLOCATION AND ASSIGNMENT REPORTS")
           .long("report")
-          .short("r")
-          .multiple(true)
+          .short('r')
+          .multiple_occurrences(true)
           .value_name("FILE")
           .required(true))
-        .arg(Arg::with_name("ADDR")
+        .arg(Arg::new("ADDR")
           .help("IP addrs to get info")
           .index(1)
           .takes_value(true)
-          .multiple(true)
+          .multiple_values(true)
           .required(false))
       );
   let m = app.get_matches();
@@ -81,9 +81,7 @@ fn main() {
       exit(-1);
     }
     None => {
-      eprint!("{}\n", m.usage());
-      exit(-1);
     }
   }
-
+  Ok(())
 }
