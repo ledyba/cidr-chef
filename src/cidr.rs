@@ -8,7 +8,6 @@
 pub mod tree;
 
 use std::num::ParseIntError;
-use clap::Format::Error;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
@@ -63,7 +62,7 @@ impl Cidr {
     } else if addr.contains(":") {
       parse6(addr, addr)
     } else {
-      Error(ParseError::CannotDetectAddrVersionError)
+      Err(ParseError::FailedToDetectIpVersion)
     }
   }
   fn to_string4(&self) -> String {
