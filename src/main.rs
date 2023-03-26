@@ -15,7 +15,7 @@ mod cmds;
 fn main() -> anyhow::Result<()> {
   let app = App::new("cidr-chef")
     .version("0.1.0")
-    .author("Kaede Fujisaki <psi@7io.org>")
+    .author("Kaede Fujisaki <kaede@hexe.net>")
     .about("Swiss-Army Knife for CIDR calculation")
     .setting(AppSettings::SubcommandRequiredElseHelp)
     .subcommand(App::new("calc")
